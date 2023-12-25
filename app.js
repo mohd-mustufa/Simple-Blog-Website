@@ -35,6 +35,7 @@ app.get("/about", (req, res) => {
 // blog routes
 app.use("/blogs", blogRoutes);
 
+// Incorrect url
 app.use((req, res) => {
   res.status(404).render("error", { title: "404 Error" });
 });
