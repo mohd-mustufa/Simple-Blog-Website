@@ -2,7 +2,6 @@ const express = require("express");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
 const Blog = require("./models/blog");
-const { ObjectId } = require("mongodb");
 
 // Express app
 const app = express();
@@ -22,55 +21,11 @@ app.set("view engine", "ejs");
 // middleware
 app.use(express.static("public"));
 // app.use(morgan("dev"));
-
-// mongoose and mongo sandbox routes
-app.get("/add-blog", (req, res) => {
-  const blog = new Blog({
-    title: "demo blog",
-    snippet: "some snippet",
-    body: "lots of stuff here",
-  });
-
-  blog
-    .save()
-    .then((result) => res.send(result))
-    .catch((err) => console.log(err));
-});
-
-app.get("/all-blogs", (req, res) => {
-  Blog.find()
-    .then((result) => res.send(result))
-    .catch((err) => console.log(err));
-});
-
-app.get("/single-blog/:id", (req, res) => {
-  //   Blog.find({ _id: new ObjectId(req.params.id) })
-  Blog.findById(req.params.id)
-    .then((result) => res.send(result))
-    .catch((err) => console.log(err));
-});
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.get("/", (req, res) => {
-  const blogs = [
-    {
-      title: "First Blog",
-      snippet:
-        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Recusandae",
-    },
-    {
-      title: "Second Blog",
-      snippet:
-        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Recusandae",
-    },
-    {
-      title: "Third Blog",
-      snippet:
-        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Recusandae",
-    },
-  ];
-
-  res.render("index", { title: "Home", blogs });
+  res.redirect("/blogs");
 });
 
 app.get("/about", (req, res) => {
@@ -78,7 +33,43 @@ app.get("/about", (req, res) => {
 });
 
 app.get("/blogs/create", (req, res) => {
-  res.render("createBlog", { title: "Create a new blog" });
+  res.render("createBlog", { title: "Create A New Blog" });
+});
+
+// DB Related Routes
+app.get("/blogs", (req, res) => {
+  Blog.find()
+    .sort({ updatedAt: -1 })
+    .then((result) =>
+      res.render("index", { title: "All Blogs", blogs: result })
+    )
+    .catch((err) => console.log(err));
+});
+
+app.post("/blogs", (req, res) => {
+  const blog = new Blog(req.body);
+  blog
+    .save()
+    .then(() => {
+      res.redirect("/blogs");
+    })
+    .catch((err) => console.log(err));
+});
+
+app.get("/blogs/:id", (req, res) => {
+  Blog.findById(req.params.id)
+    .then((result) => {
+      res.render("blogDetails", { title: "Blog Details", blog: result });
+    })
+    .catch((err) => console.log(err));
+});
+
+app.delete("/blogs/:id", (req, res) => {
+  Blog.findByIdAndDelete(req.params.id)
+    .then(() => {
+      res.json({ redirect: "/blogs" });
+    })
+    .catch((err) => console.log(err));
 });
 
 app.use((req, res) => {
